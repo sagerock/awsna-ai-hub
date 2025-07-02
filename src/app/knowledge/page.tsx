@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getUserSchools, School } from '@/lib/schools';
+import { getMySchools } from '@/lib/admin';
 // import { uploadDocumentToQdrant, DocumentMetadata } from '@/lib/qdrant'; // uploadDocumentToQdrant moved to API route
 import { DocumentMetadata } from '@/lib/qdrant'; // DocumentMetadata might still be used for typing if needed elsewhere, or remove if not.
 import {
@@ -32,7 +32,7 @@ export default function KnowledgeManagementPage() {
     return displayNames[collection] || collection.charAt(0).toUpperCase() + collection.slice(1);
   };
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  const [userSchools, setUserSchools] = useState<{school: School, role: string}[]>([]);
+  const [userSchools, setUserSchools] = useState<{school: any, role: string}[]>([]);
   const [collections, setCollections] = useState<string[]>([
     'curriculum', 'accreditation', 'marketing', 'administration', 'general', 'school-renewal'
   ]);
@@ -56,45 +56,18 @@ export default function KnowledgeManagementPage() {
     async function fetchUserSchools() {
       if (currentUser?.uid) {
         try {
-          const schools = await getUserSchools(currentUser.uid);
+          const schools = await getMySchools();
           setUserSchools(schools);
           
           // Set the first school as selected by default if user has schools
           if (schools.length > 0) {
             setSelectedSchool(schools[0].school.id);
           } else {
-            // Fallback: Create or use a default AWSNA school for testing
-            console.log('No schools found, using default AWSNA school for testing');
-            const defaultSchool = {
-              school: {
-                id: 'awsna',
-                name: 'AWSNA',
-                location: 'Default Location',
-                membershipType: 'full' as const,
-                createdAt: new Date() as any,
-                updatedAt: new Date() as any
-              },
-              role: 'admin' as const
-            };
-            setUserSchools([defaultSchool]);
-            setSelectedSchool('awsna');
+            console.log('No schools found for user - they need to be assigned to schools by an admin');
           }
         } catch (error) {
           console.error('Error fetching schools:', error);
-          // Fallback on error too
-          const defaultSchool = {
-            school: {
-              id: 'awsna',
-              name: 'AWSNA',
-              location: 'Default Location',
-              membershipType: 'full' as const,
-              createdAt: new Date() as any,
-              updatedAt: new Date() as any
-            },
-            role: 'admin' as const
-          };
-          setUserSchools([defaultSchool]);
-          setSelectedSchool('awsna');
+          // Don't set any fallback - let the UI show appropriate message
         }
       }
     }

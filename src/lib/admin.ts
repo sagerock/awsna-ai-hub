@@ -305,7 +305,7 @@ export async function deleteCollection(collectionName: string): Promise<boolean>
 /**
  * Get all users (admin only)
  */
-export async function getAllUsers(): Promise<{uid: string, email: string, displayName: string}[]> {
+export async function getAllUsers(): Promise<{uid: string, email: string, displayName: string, emailVerified?: boolean, disabled?: boolean}[]> {
   try {
     // Get Firebase ID token for authentication
     const { auth } = await import('@/lib/firebase');
@@ -331,6 +331,122 @@ export async function getAllUsers(): Promise<{uid: string, email: string, displa
     return data.users || [];
   } catch (error) {
     console.error('Error getting users:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new user (admin only)
+ */
+export async function createUser(email: string, password: string, displayName?: string): Promise<{uid: string, email: string, displayName: string}> {
+  try {
+    // Get Firebase ID token for authentication
+    const { auth } = await import('@/lib/firebase');
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
+    
+    const token = await auth.currentUser.getIdToken();
+    
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        action: 'createUser',
+        email,
+        password,
+        displayName
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create user');
+    }
+
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a user (admin only)
+ */
+export async function deleteUser(targetUserId: string): Promise<boolean> {
+  try {
+    // Get Firebase ID token for authentication
+    const { auth } = await import('@/lib/firebase');
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
+    
+    const token = await auth.currentUser.getIdToken();
+    
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        action: 'deleteUser',
+        targetUserId
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete user');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update a user (admin only)
+ */
+export async function updateUser(targetUserId: string, updates: {email?: string, displayName?: string, disabled?: boolean}): Promise<{uid: string, email: string, displayName: string, disabled: boolean}> {
+  try {
+    // Get Firebase ID token for authentication
+    const { auth } = await import('@/lib/firebase');
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
+    
+    const token = await auth.currentUser.getIdToken();
+    
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        action: 'updateUser',
+        targetUserId,
+        ...updates
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update user');
+    }
+
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error('Error updating user:', error);
     throw error;
   }
 }
@@ -397,4 +513,196 @@ export async function hasAdminPermission(
     console.error('Error checking admin permission:', error);
     return false;
   }
+}
+
+// Helper function to get ID token
+async function getIdToken(): Promise<string | null> {
+  try {
+    const { auth } = await import('@/lib/firebase');
+    if (!auth.currentUser) {
+      return null;
+    }
+    return await auth.currentUser.getIdToken();
+  } catch (error) {
+    console.error('Error getting ID token:', error);
+    return null;
+  }
+}
+
+// School Management Functions
+export async function getSchools(): Promise<any[]> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin?action=getSchools', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get schools: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.schools || [];
+}
+
+export async function createSchool(schoolData: {
+  name: string;
+  address?: string;
+  website?: string;
+  contactEmail?: string;
+}): Promise<void> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      action: 'createSchool',
+      ...schoolData
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create school: ${error}`);
+  }
+}
+
+export async function updateSchool(schoolId: string, schoolData: {
+  name?: string;
+  address?: string;
+  website?: string;
+  contactEmail?: string;
+}): Promise<void> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      action: 'updateSchool',
+      schoolId,
+      ...schoolData
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to update school: ${error}`);
+  }
+}
+
+export async function assignUserToSchool(userId: string, schoolId: string, role: string = 'user'): Promise<void> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      action: 'assignUserToSchool',
+      targetUserId: userId,
+      schoolId,
+      role
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to assign user to school: ${error}`);
+  }
+}
+
+export async function removeUserFromSchool(userId: string, schoolId: string): Promise<void> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      action: 'removeUserFromSchool',
+      targetUserId: userId,
+      schoolId
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to remove user from school: ${error}`);
+  }
+}
+
+export async function deleteSchool(schoolId: string): Promise<void> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      action: 'deleteSchool',
+      schoolId
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to delete school: ${error}`);
+  }
+}
+
+// Function for regular users to get their own school assignments
+export async function getMySchools(): Promise<{school: any, role: string}[]> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch('/api/admin?action=getMySchools', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get user schools: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.schools || [];
 } 
