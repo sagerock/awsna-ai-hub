@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { getBotConfigById, BotConfig } from '@/lib/bots';
-import { getUserSchools, School } from '@/lib/schools';
+import { getMySchools } from '@/lib/admin';
 // Removed: import { listKnowledgeCollections } from '@/lib/qdrant';
 import Link from 'next/link';
 
@@ -28,7 +28,7 @@ function ChatPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [selectedModel, setSelectedModel] = useState<string>('');
-  const [userSchools, setUserSchools] = useState<{school: School, role: string}[]>([]);
+  const [userSchools, setUserSchools] = useState<{school: any, role: string}[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<string>('');
   const [knowledgeCollections, setKnowledgeCollections] = useState<string[]>([]);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
@@ -66,7 +66,7 @@ function ChatPageContent() {
       if (!currentUser) return;
       
       try {
-        const schools = await getUserSchools(currentUser.uid);
+        const schools = await getMySchools();
         setUserSchools(schools);
         
         // If user has schools, select the first one by default
@@ -377,7 +377,7 @@ function ChatPageContent() {
                           <span className="font-medium text-indigo-600">Knowledge sources:</span>
                           <ul className="list-disc list-inside pl-2">
                             {msg.knowledgeSources.map((source, idx) => (
-                              <li key={idx} className="truncate max-w-xs">{source}</li>
+                              <li key={`${index}-source-${idx}`} className="truncate max-w-xs">{source}</li>
                             ))}
                           </ul>
                         </div>

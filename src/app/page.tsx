@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { predefinedBots, getBotsByCategory } from '@/lib/bots';
-import { getUserSchools, School } from '@/lib/schools';
+import { getMySchools } from '@/lib/admin';
 import { BotConfig } from '@/lib/bots';
 import BotAvatar from '@/components/BotAvatar';
 
@@ -32,8 +32,8 @@ function BotCard({ bot, schoolSpecific = false }: { bot: BotConfig, schoolSpecif
         <p className="text-gray-600 mb-4 text-sm">{bot.description}</p>
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1">
-            {bot.tags?.slice(0, 2).map(tag => (
-              <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{tag}</span>
+            {bot.tags?.slice(0, 2).map((tag, index) => (
+              <span key={`${bot.id}-tag-${index}`} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{tag}</span>
             ))}
             {bot.tags && bot.tags.length > 2 && (
               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">+{bot.tags.length - 2}</span>
@@ -50,7 +50,7 @@ function HomePageContent() {
   const router = useRouter();
   const { currentUser, logout, isAdmin } = useAuth();
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  const [userSchools, setUserSchools] = useState<{school: School, role: string}[]>([]);
+  const [userSchools, setUserSchools] = useState<{school: any, role: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('general');
   
@@ -60,7 +60,7 @@ function HomePageContent() {
       if (currentUser?.uid) {
         try {
           setIsLoading(true);
-          const schools = await getUserSchools(currentUser.uid);
+          const schools = await getMySchools();
           setUserSchools(schools);
           
           // Set the first school as selected by default if user has schools
