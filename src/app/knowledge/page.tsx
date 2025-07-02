@@ -17,7 +17,7 @@ import Link from 'next/link';
 
 export default function KnowledgeManagementPage() {
   const router = useRouter();
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   
   // Function to format collection display names
   const formatCollectionName = (collection: string): string => {
@@ -296,16 +296,30 @@ export default function KnowledgeManagementPage() {
                 <h1 className="text-2xl font-bold text-gray-800">Knowledge Management</h1>
                 <p className="text-gray-600 mt-1">Upload and manage Waldorf educational resources</p>
               </div>
-              <Link href="/" className="text-indigo-500 hover:text-indigo-600">
-                Back to Home
-              </Link>
+              <div className="flex space-x-4">
+                {isAdmin && (
+                  <Link href="/admin" className="text-red-600 hover:text-red-800 font-medium">
+                    Admin Panel
+                  </Link>
+                )}
+                <Link href="/" className="text-indigo-500 hover:text-indigo-600">
+                  Back to Home
+                </Link>
+              </div>
             </div>
           </div>
           
           {/* School selector */}
           {userSchools.length > 0 ? (
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Select School</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Select School</h2>
+                {isAdmin && (
+                  <span className="text-sm text-red-600 bg-red-100 px-2 py-1 rounded-full font-medium">
+                    Admin Mode: Global Access
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-4">
                 {userSchools.map(({school, role}) => (
                   <button

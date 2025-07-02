@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { useState } from 'react';
 
 interface BotAvatarProps {
   botId: string;
@@ -10,55 +9,47 @@ interface BotAvatarProps {
 }
 
 export default function BotAvatar({ botId, size = 40, className = '' }: BotAvatarProps) {
-  const [useSvg, setUseSvg] = useState(true);
+  const [imageError, setImageError] = useState(false);
   
   // Extract the bot type from the botId (e.g., "waldorf-general-assistant" -> "general-assistant")
   const botType = botId.includes('-') ? botId.split('-').slice(1).join('-') : botId;
   
-  // Try to load SVG first, fall back to PNG if SVG fails to load
+  // Try to load SVG first, fall back to PNG, then to default
   const svgPath = `/bot-avatars/${botType}.svg`;
   const pngPath = `/bot-avatars/${botType}.png`;
+  const defaultPath = `/bot-avatars/general-assistant.svg`;
   
-  // Handle SVG loading error
-  const handleSvgError = () => {
-    setUseSvg(false);
+  // Handle image loading error
+  const handleImageError = () => {
+    setImageError(true);
   };
   
   return (
     <div 
-      className={`relative rounded-full overflow-hidden ${className}`}
+      className={`relative rounded-full overflow-hidden flex items-center justify-center bg-indigo-100 ${className}`}
       style={{ width: size, height: size }}
     >
-      {useSvg ? (
-        <object
-          data={svgPath}
-          type="image/svg+xml"
-          className="w-full h-full"
-          onError={handleSvgError}
-        >
-          <img
-            src={pngPath}
-            alt={`${botType} avatar`}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // If PNG also fails, use a default avatar
-              const img = document.createElement('img');
-              img.src = '/bot-avatars/general-assistant.svg';
-              img.alt = 'Default avatar';
-              img.className = 'w-full h-full object-cover';
-              const target = e.currentTarget;
-              const parent = target.parentNode;
-              if (parent) {
-                parent.replaceChild(img, target);
-              }
-            }}
-          />
-        </object>
-      ) : (
+      {!imageError ? (
         <img
-          src={pngPath}
+          src={svgPath}
           alt={`${botType} avatar`}
           className="w-full h-full object-cover"
+          onError={handleImageError}
+        />
+      ) : (
+        <img
+          src={defaultPath}
+          alt="Default avatar"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // Final fallback - just show initials
+            const target = e.currentTarget;
+            const parent = target.parentNode as HTMLElement;
+            if (parent) {
+              const initials = botType.split('-').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 2);
+              parent.innerHTML = `<span class="text-indigo-600 font-semibold" style="font-size: ${size * 0.4}px">${initials}</span>`;
+            }
+          }}
         />
       )}
     </div>

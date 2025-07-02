@@ -48,7 +48,7 @@ function BotCard({ bot, schoolSpecific = false }: { bot: BotConfig, schoolSpecif
 
 function HomePageContent() {
   const router = useRouter();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [userSchools, setUserSchools] = useState<{school: School, role: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,8 +113,16 @@ function HomePageContent() {
                   <Link href="/knowledge" className="text-indigo-600 hover:text-indigo-800 font-medium">
                     Knowledge Management
                   </Link>
+                  {isAdmin && (
+                    <Link href="/admin" className="text-red-600 hover:text-red-800 font-medium">
+                      Admin Panel
+                    </Link>
+                  )}
                 </div>
-                <span className="mr-4 text-gray-600">{currentUser.email}</span>
+                <span className="mr-4 text-gray-600">
+                  {currentUser.email}
+                  {isAdmin && <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">Admin</span>}
+                </span>
                 <button
                   onClick={handleLogout}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"

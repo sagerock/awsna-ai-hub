@@ -8,6 +8,35 @@ A comprehensive AI-powered platform for Waldorf schools, providing specialized A
 - **Specialized Bots**: Waldorf-specific AI assistants for different educational domains
 - **Knowledge Management**: Document upload and vector search with Qdrant
 - **Multi-school Support**: Namespace isolation for different school organizations
+- **Admin System**: Comprehensive admin controls for user and content management
+
+## Admin Features
+
+The platform includes comprehensive admin functionality for system management:
+
+### Admin Access
+- **System Admins**: Predefined in `src/lib/admin.ts` (sage@sagerock.com)
+- **Automatic Admin Detection**: System automatically grants admin privileges to authorized emails
+- **Admin Navigation**: Red "Admin Panel" link appears in navigation for admins
+- **Admin Badge**: Visual indicator showing admin status
+
+### Admin Dashboard Features
+- **Overview**: System statistics and health monitoring
+- **User Management**: Grant/revoke admin permissions (enhanced features coming soon)
+- **Content Management**: View and delete any Qdrant collection across all schools
+- **Global Access**: Admins can access all school collections and content
+
+### Admin Privileges
+- ✅ Access all school collections (bypass school restrictions)
+- ✅ Delete any content from any school
+- ✅ View admin-only features in UI
+- ✅ Special admin controls in chat interface
+- 🔄 Add/remove other admins (enhanced features coming soon)
+
+### Security
+- Firestore security rules enforce admin-only operations
+- Admin collection restricted to authorized users only
+- System admin privileges cannot be revoked
 
 ## Supported AI Models
 

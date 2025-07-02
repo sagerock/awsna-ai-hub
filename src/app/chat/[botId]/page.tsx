@@ -13,7 +13,7 @@ function ChatPageContent() {
   const params = useParams();
   const botId = typeof params.botId === 'string' ? params.botId : null;
   const router = useRouter();
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const [botConfig, setBotConfig] = useState<BotConfig | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [messages, setMessages] = useState<Array<{ 
@@ -332,7 +332,13 @@ function ChatPageContent() {
             &larr; Back to Bots
           </Link>
           <h1 className="text-xl font-bold text-gray-800">Chat with {botConfig.name}</h1>
-          <div className="w-24">{/* Spacer */}</div>
+          <div className="flex space-x-4">
+            {isAdmin && (
+              <Link href="/admin" className="text-red-600 hover:text-red-800 font-medium">
+                Admin Panel
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -421,19 +427,21 @@ function ChatPageContent() {
                       </label>
                     </div>
                     
-                    <div className="flex items-center">
-                      <input
-                        id="show-all-collections"
-                        type="checkbox"
-                        checked={showAllCollections}
-                        onChange={(e) => setShowAllCollections(e.target.checked)}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        disabled={isSending || isLoadingHistory}
-                      />
-                      <label htmlFor="show-all-collections" className="ml-2 block text-sm text-gray-900">
-                        Show all school collections (Admin)
-                      </label>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center">
+                        <input
+                          id="show-all-collections"
+                          type="checkbox"
+                          checked={showAllCollections}
+                          onChange={(e) => setShowAllCollections(e.target.checked)}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          disabled={isSending || isLoadingHistory}
+                        />
+                        <label htmlFor="show-all-collections" className="ml-2 block text-sm text-gray-900">
+                          <span className="text-red-600 font-medium">Admin:</span> Show all school collections
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
