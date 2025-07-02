@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // TEMPORARY: More permissive rules for debugging
+    // Allow authenticated users to read/write to users collection and subcollections
+    match /users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Rules for the 'schools' collection
+    match /schools/{schoolId} {
+      // Allow any authenticated user to read school information (e.g., name, details)
+      allow read: if request.auth != null;
+      // Restrict writes to school documents (e.g., only by admins - needs an isAdmin field in user docs)
+      // allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow write: if request.auth != null; // Or, more permissively for now if you don't have admin roles yet
+
+      // Rules for the 'users' subcollection within each school (for school-specific user roles/access)
+      match /users/{userIdInSchoolDoc} {
+        // Allow an authenticated user to read their own document in a school's user list
+        // Or allow an admin to read any user's document in the school's list
+        allow read: if request.auth != null && (request.auth.uid == userIdInSchoolDoc /* || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true */);
+        // Allow an authenticated user to write to their own document (e.g. to join/leave a school context if your app allows)
+        // Or restrict writes to admins
+        allow write: if request.auth != null && (request.auth.uid == userIdInSchoolDoc /* || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true */);
+      }
+
+      // If schools have subcollections like 'bots' or 'knowledge_access'
+      match /bots/{botId} {
+        allow read: if request.auth != null; // Authenticated users can read bot configurations for a school
+        // allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true; // Admins can write
+      }
+    }
+    
+    // Rules for 'bots' top-level collection (if you have one for global bot templates)
+    match /bots/{botId} {
+        allow read: if request.auth != null; // Authenticated users can read global bot templates
+        // allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true; // Admins can write
+    }
+
+    // Add rules for any other collections you have, e.g., 'knowledge_collections_metadata'
+    // match /knowledge_collections_metadata/{docId} {
+    //   allow read: if request.auth != null;
+    // }
+
+
+    // Fallback: Deny all other access by default (good security practice)
+    // This is implicitly handled if no other rule matches, but can be explicit.
+    // However, your previous rule `match /{document=**} { allow read, write: if false; }`
+    // was too broad and caught everything not explicitly allowed above it.
+    // With more specific rules for 'users' and 'schools', that broad deny rule is less problematic
+    // but ensure all necessary collections have explicit allow rules.
+  }
+}
